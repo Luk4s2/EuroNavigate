@@ -1,0 +1,48 @@
+name: Android CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build project (debug + release)
+        run: ./gradlew build assembleRelease
+
+      - name: Decode keystore from secret
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
+
+      - name: Sign APK with apksigner
+        run: |
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
+            --ks release-key.jks \
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+            --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+            --ks-key-alias ${{ secrets.KEY_ALIAS }} \
+            --out app/build/outputs/apk/release/app-release-signed.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Upload signed APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EuroNavigate-APK
+          path: app/build/outputs/apk/release/app-release-signed.apk
+          if-no-files-found: error
