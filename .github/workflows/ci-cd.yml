@@ -14,11 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Inject MAPS_API_KEY from GitHub Secrets
-        run: echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" >> $GITHUB_ENV
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
+
+      - name: Create local.properties
+        run: |
+          echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" >> local.properties
 
       - name: Set up JDK
         uses: actions/setup-java@v3
