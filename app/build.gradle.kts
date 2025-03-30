@@ -29,7 +29,8 @@ android {
 		versionName = "1.0"
 
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-		val MAPS_API_KEY: String? = project.findProperty("MAPS_API_KEY") as String?
+		val MAPS_API_KEY: String = project.findProperty("MAPS_API_KEY") as? String
+			?: throw GradleException("MAPS_API_KEY is missing. Add it to gradle.properties or GitHub Secret.")
 		manifestPlaceholders["MAPS_API_KEY"] = MAPS_API_KEY ?: ""
 	}
 
