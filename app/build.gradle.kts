@@ -20,11 +20,11 @@ val apiKey = requireNotNull(localProperties.getProperty("MAPS_API_KEY")) {
 
 
 android {
-	namespace = "eu.plantpal.euronavigate"
+	namespace = "eu.euronavigate"
 	compileSdk = 35
 
 	defaultConfig {
-		applicationId = "eu.plantpal.euronavigate"
+		applicationId = "eu.euronavigate"
 		minSdk = 24
 		targetSdk = 35
 		versionCode = 1
@@ -35,7 +35,7 @@ android {
 			?: throw GradleException("MAPS_API_KEY is missing.")
 		manifestPlaceholders["MAPS_API_KEY"] = MAPS_API_KEY
 	}
-	
+
 	secrets {
 		propertiesFileName = "secrets.properties"
 		defaultPropertiesFileName = "local.defaults.properties"
