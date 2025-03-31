@@ -49,7 +49,7 @@ fun LocationPager(
 	) {
 		items(locations.size) { index ->
 			val location = locations[index]
-			val isSelected = selectedLocation == location
+			val isSelected = selectedLocation?.timestamp == location.timestamp
 
 			Card(
 				modifier = Modifier

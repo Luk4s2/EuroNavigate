@@ -2,6 +2,7 @@
 
 package eu.euronavigate.ui.screens.mapScreen
 
+import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -47,6 +48,7 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import eu.euronavigate.data.model.LocationData
+import eu.euronavigate.ui.navigation.ObserveLocationPermission
 import eu.euronavigate.ui.screens.settingsScreen.StatRow
 import eu.euronavigate.ui.utils.ModifierFullWidthPadded
 import eu.euronavigate.ui.utils.UIConstants
@@ -70,6 +72,7 @@ fun MapScreen(
 	var didMoveCamera by remember { mutableStateOf(false) }
 	var movingCameraLocation by remember { mutableStateOf<LocationData?>(null) }
 	var showBottomSheet by remember { mutableStateOf(false) }
+	val permissionsGranted = remember { mutableStateOf(false) }
 
 	fun handleLocationSelection(location: LocationData) {
 		showBottomSheet = false
@@ -92,6 +95,7 @@ fun MapScreen(
 			.build()
 		googleMapRef?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
 	}
+	ObserveLocationPermission(permissionsGranted)
 
 	// Request permissions + load interval
 	LaunchedEffect(Unit) {
@@ -99,21 +103,39 @@ fun MapScreen(
 
 		val fine = ActivityCompat.checkSelfPermission(
 			context,
-			android.Manifest.permission.ACCESS_FINE_LOCATION
+			Manifest.permission.ACCESS_FINE_LOCATION
 		)
 		val coarse = ActivityCompat.checkSelfPermission(
 			context,
-			android.Manifest.permission.ACCESS_COARSE_LOCATION
+			Manifest.permission.ACCESS_COARSE_LOCATION
 		)
-		if (fine != PackageManager.PERMISSION_GRANTED && coarse != PackageManager.PERMISSION_GRANTED) {
+
+		if (fine != PackageManager.PERMISSION_GRANTED || coarse != PackageManager.PERMISSION_GRANTED) {
 			ActivityCompat.requestPermissions(
 				activity!!,
 				arrayOf(
-					android.Manifest.permission.ACCESS_FINE_LOCATION,
-					android.Manifest.permission.ACCESS_COARSE_LOCATION
+					Manifest.permission.ACCESS_FINE_LOCATION,
+					Manifest.permission.ACCESS_COARSE_LOCATION
 				),
 				1001
 			)
+		} else {
+			permissionsGranted.value = true
+		}
+	}
+
+	LaunchedEffect(context) {
+		val fine = ActivityCompat.checkSelfPermission(
+			context,
+			Manifest.permission.ACCESS_FINE_LOCATION
+		)
+		val coarse = ActivityCompat.checkSelfPermission(
+			context,
+			Manifest.permission.ACCESS_COARSE_LOCATION
+		)
+
+		if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
+			permissionsGranted.value = true
 		}
 	}
 
@@ -171,54 +193,57 @@ fun MapScreen(
 	}
 
 	Box(modifier = Modifier.fillMaxSize()) {
-		AndroidView(
-			factory = { ctx ->
-				MapView(ctx).apply {
-					onCreate(Bundle())
-					onResume()
-					getMapAsync { map ->
-						googleMapRef = map
-						if (
-							ActivityCompat.checkSelfPermission(
-								context,
-								android.Manifest.permission.ACCESS_FINE_LOCATION
-							) == PackageManager.PERMISSION_GRANTED ||
-							ActivityCompat.checkSelfPermission(
-								context,
-								android.Manifest.permission.ACCESS_COARSE_LOCATION
-							) == PackageManager.PERMISSION_GRANTED
-						) {
-							map.uiSettings.isMyLocationButtonEnabled = false
-							map.isMyLocationEnabled = true
-							map.uiSettings.isCompassEnabled = false
-						}
+		if (permissionsGranted.value) {
+			AndroidView(
+				factory = { ctx ->
+					MapView(ctx).apply {
+						onCreate(Bundle())
+						onResume()
+						getMapAsync { map ->
+							googleMapRef = map
+							if (
+								ActivityCompat.checkSelfPermission(
+									context,
+									Manifest.permission.ACCESS_FINE_LOCATION
+								) == PackageManager.PERMISSION_GRANTED ||
+								ActivityCompat.checkSelfPermission(
+									context,
+									Manifest.permission.ACCESS_COARSE_LOCATION
+								) == PackageManager.PERMISSION_GRANTED
+							) {
+								map.uiSettings.isMyLocationButtonEnabled = false
+								map.isMyLocationEnabled = true
+								map.uiSettings.isCompassEnabled = false
+							}
 
-						map.setOnMarkerClickListener { marker ->
-							val data = marker.tag as? LocationData
-							data?.let {
-								handleLocationSelection(it)
-								true
-							} ?: false
-						}
+							map.setOnMarkerClickListener { marker ->
+								val data = marker.tag as? LocationData
+								data?.let {
+									handleLocationSelection(it)
+									true
+								} ?: false
+							}
 
-						map.setOnCameraIdleListener {
-							movingCameraLocation?.let {
-								showBottomSheet = true
-								movingCameraLocation = null
+							map.setOnCameraIdleListener {
+								movingCameraLocation?.let {
+									showBottomSheet = true
+									movingCameraLocation = null
+								}
 							}
 						}
 					}
-				}
-			},
-			modifier = Modifier.matchParentSize()
-		)
+				},
+				modifier = Modifier.matchParentSize()
+			)
+		}
 
 		// Polyline + Marker drawing
 		LaunchedEffect(locationState.locations, googleMapRef, selectedLocation?.timestamp) {
 			val map = googleMapRef ?: return@LaunchedEffect
 			val newLocation = locationState.locations.lastOrNull()
-			if (newLocation != null && selectedLocation == null) {
+			if (newLocation != null && selectedLocation == null && !didMoveCamera) {
 				moveCameraToLocation(newLocation)
+				didMoveCamera = true
 			}
 			if (locationState.locations.isNotEmpty()) {
 				map.clear()

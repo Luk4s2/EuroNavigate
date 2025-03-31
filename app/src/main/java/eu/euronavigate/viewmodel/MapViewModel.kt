@@ -10,6 +10,7 @@ import eu.euronavigate.data.model.LocationData
 import eu.euronavigate.data.repository.ILocationRepository
 import eu.euronavigate.data.repository.LocationRepositoryImpl
 import eu.euronavigate.ui.utils.UIConstants
+import eu.euronavigate.ui.utils.isDuplicateLocation
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +46,9 @@ class MapViewModel : ViewModel() {
 	fun restartTrackingIfRunning(context: Context) {
 		if (isTracking) {
 			stopTracking()
+			clearSelectedLocation()
 			startTracking(context)
+
 		}
 	}
 
@@ -61,13 +64,19 @@ class MapViewModel : ViewModel() {
 		if (trackingJob != null) return
 		isTracking = true
 		repository.startLocationUpdates(context, trackingInterval)
-		trackingJob?.cancel()
 
 		trackingJob = viewModelScope.launch {
 			repository.locationUpdates.collect { loc ->
-				_locationState.value = _locationState.value.copy(
-					locations = _locationState.value.locations + loc
-				)
+				val currentList = _locationState.value.locations
+				val last = currentList.lastOrNull()
+
+				val isDuplicate = isDuplicateLocation(loc, last)
+
+				if (!isDuplicate) {
+					_locationState.value = _locationState.value.copy(
+						locations = currentList + loc
+					)
+				}
 			}
 		}
 	}
