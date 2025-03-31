@@ -5,6 +5,7 @@ plugins {
 	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.kotlin.compose)
 	kotlin("plugin.serialization") version "1.9.22"
+	id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 val localProperties = Properties()
@@ -16,6 +17,7 @@ if (file.exists()) {
 val apiKey = requireNotNull(localProperties.getProperty("MAPS_API_KEY")) {
 	"MAPS_API_KEY is missing from local.properties"
 }
+
 
 android {
 	namespace = "eu.plantpal.euronavigate"
@@ -32,6 +34,11 @@ android {
 		val MAPS_API_KEY: String = project.findProperty("MAPS_API_KEY") as? String
 			?: throw GradleException("MAPS_API_KEY is missing.")
 		manifestPlaceholders["MAPS_API_KEY"] = MAPS_API_KEY
+	}
+	
+	secrets {
+		propertiesFileName = "secrets.properties"
+		defaultPropertiesFileName = "local.defaults.properties"
 	}
 
 	buildTypes {
@@ -79,6 +86,6 @@ dependencies {
 	implementation(libs.androidx.navigation.compose)
 	implementation(libs.kotlinx.coroutines.play.services)
 	implementation(libs.datastore.preferences)
-	implementation("androidx.compose.material:material-icons-extended")
+	implementation(libs.androidx.material.icons.extended)
 
 }

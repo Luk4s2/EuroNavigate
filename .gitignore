@@ -44,3 +44,11 @@ local.properties
 Thumbs.db
 captures/
 output.json
+
+# 🔐 Secrets and API keys
+secrets.properties
+
+# Optional: ignore all .properties files except specific ones
+*.properties
+!local.defaults.properties
+!gradle.properties
