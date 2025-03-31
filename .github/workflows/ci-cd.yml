@@ -28,7 +28,7 @@ jobs:
           java-version: '17'
 
       - name: Build project (debug + release)
-        run: ./gradlew build assembleRelease
+        run: ./gradlew assembleRelease -PMAPS_API_KEY=${{ secrets.MAPS_API_KEY }}
 
       - name: Decode keystore from secret
         run: |
