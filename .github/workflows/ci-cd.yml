@@ -18,9 +18,8 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Create local.properties
-        run: |
-          echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" >> local.properties
+      - name: Set MAPS_API_KEY for build
+        run: echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" >> gradle.properties
 
       - name: Set up JDK
         uses: actions/setup-java@v3

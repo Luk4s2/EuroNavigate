@@ -30,10 +30,9 @@ android {
 		versionCode = 1
 		versionName = "1.0"
 
+		buildConfigField("String", "MAPS_API_KEY", "\"${project.properties["MAPS_API_KEY"]}\"")
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-		val MAPS_API_KEY: String = project.findProperty("MAPS_API_KEY") as? String
-			?: throw GradleException("MAPS_API_KEY is missing.")
-		manifestPlaceholders["MAPS_API_KEY"] = MAPS_API_KEY
+		manifestPlaceholders["MAPS_API_KEY"] = project.properties["MAPS_API_KEY"] ?: ""
 	}
 
 	secrets {
