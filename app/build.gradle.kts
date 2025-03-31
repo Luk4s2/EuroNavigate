@@ -28,6 +28,9 @@ android {
 		propertiesFileName = "secrets.properties"
 		defaultPropertiesFileName = "local.defaults.properties"
 	}
+	buildFeatures {
+		buildConfig = true
+	}
 
 	buildTypes {
 		release {
