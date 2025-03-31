@@ -30,23 +30,20 @@ jobs:
       - name: Build project (debug + release)
         run: ./gradlew assembleRelease -PMAPS_API_KEY=${{ secrets.MAPS_API_KEY }}
 
+      - name: Print injected MAPS_API_KEY
+        run: |
+          echo "Injected key: $MAPS_API_KEY"
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+
       - name: Decode keystore from secret
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release-key.jks
 
-      - name: Sign APK with apksigner
-        run: |
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
-            --ks release-key.jks \
-            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
-            --key-pass pass:${{ secrets.KEY_PASSWORD }} \
-            --ks-key-alias ${{ secrets.KEY_ALIAS }} \
-            --out app/build/outputs/apk/release/app-release-signed.apk \
-            app/build/outputs/apk/release/app-release-unsigned.apk
 
       - name: Upload signed APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: EuroNavigate-APK
-          path: app/build/outputs/apk/release/app-release-signed.apk
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
