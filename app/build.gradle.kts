@@ -1,5 +1,3 @@
-import java.util.Properties
-
 plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.android)
@@ -8,16 +6,7 @@ plugins {
 	id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
-val localProperties = Properties()
-val file = rootProject.file("local.properties")
-
-if (file.exists()) {
-	localProperties.load(file.inputStream())
-}
-val apiKey = requireNotNull(localProperties.getProperty("MAPS_API_KEY")) {
-	"MAPS_API_KEY is missing from local.properties"
-}
-
+val mapsApiKey = project.findProperty("MAPS_API_KEY") as? String ?: ""
 
 android {
 	namespace = "eu.euronavigate"
