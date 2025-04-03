@@ -27,10 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,42 +36,33 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.navigation.NavHostController
-import eu.euronavigate.data.local.SettingsDataStore
 import eu.euronavigate.ui.components.CustomSnackbarHost
 import eu.euronavigate.ui.utils.UIConstants
-import eu.euronavigate.viewmodel.MapViewModel
-import kotlinx.coroutines.launch
+import eu.euronavigate.ui.utils.exportAndShareLocations
+import eu.euronavigate.viewmodel.map.MapViewModel
+import eu.euronavigate.viewmodel.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: MapViewModel, navController: NavHostController) {
-	val context = LocalContext.current
-	var interval by remember { mutableStateOf("") }
-	var isLoading by remember { mutableStateOf(true) }
-	val locations by viewModel.locationState.collectAsState()
+fun SettingsScreen(
+	viewModel: SettingsViewModel,
+	navController: NavHostController,
+	mapViewModel: MapViewModel
+) {
+	val interval by viewModel.interval
+	val isLoading by viewModel.isLoading
 	val keyboardController = LocalSoftwareKeyboardController.current
 	val scrollState = rememberScrollState()
 	val snackbarHostState = remember { SnackbarHostState() }
 	val coroutineScope = rememberCoroutineScope()
+	val context = LocalContext.current
+
+	val stats by mapViewModel.trackingStatsModel.collectAsState()
+	val locationState by mapViewModel.locationState.collectAsState()
+	val locations = locationState.locations
 
 	LaunchedEffect(Unit) {
-		val saved = SettingsDataStore.getInterval(context)
-		interval = saved.toString()
-		isLoading = false
-	}
-
-	val saveInterval = {
-		keyboardController?.hide()
-		val intervalValue = interval.toLongOrNull() ?: UIConstants.FALLBACK_INTERVAL
-
-		viewModel.updateTrackingInterval(intervalValue)
-		viewModel.restartTrackingIfRunning(context)
-
-		coroutineScope.launch {
-			SettingsDataStore.saveInterval(context, intervalValue)
-			interval = intervalValue.toString()
-			snackbarHostState.showSnackbar(UIConstants.LABEL_SNACKBAR_SAVING)
-		}
+		viewModel.initializeIntervalSettings()
 	}
 
 	Scaffold(
@@ -114,7 +103,7 @@ fun SettingsScreen(viewModel: MapViewModel, navController: NavHostController) {
 					value = interval,
 					onValueChange = {
 						if (it.length <= 3 && it.all { char -> char.isDigit() }) {
-							interval = it
+							viewModel.updateIntervalInput(it)
 						}
 					},
 					label = { Text(UIConstants.LABEL_TRACKING_INTERVAL) },
@@ -123,17 +112,26 @@ fun SettingsScreen(viewModel: MapViewModel, navController: NavHostController) {
 						keyboardType = KeyboardType.Number,
 						imeAction = ImeAction.Done
 					),
-					keyboardActions = KeyboardActions(
-						onDone = { saveInterval() }
-					)
+					keyboardActions = KeyboardActions(onDone = {
+						viewModel.onSaveIntervalWithUiFeedback(
+							mapViewModel,
+							keyboardController,
+							coroutineScope,
+							snackbarHostState
+						)
+					})
 				)
 
 				Spacer(modifier = Modifier.height(UIConstants.SPACER_LARGE))
 
-				Button(
-					onClick = { saveInterval() },
-					modifier = Modifier.fillMaxWidth()
-				) {
+				Button(onClick = {
+					viewModel.onSaveIntervalWithUiFeedback(
+						mapViewModel,
+						keyboardController,
+						coroutineScope,
+						snackbarHostState
+					)
+				}, modifier = Modifier.fillMaxWidth()) {
 					Text(UIConstants.BUTTON_SAVE_INTERVAL)
 				}
 
@@ -141,14 +139,14 @@ fun SettingsScreen(viewModel: MapViewModel, navController: NavHostController) {
 
 				Button(
 					onClick = {
-						exportAndShareLocations(context, locations.locations)
+						exportAndShareLocations(context, locations)
 					},
 					modifier = Modifier.fillMaxWidth()
 				) {
 					Text(UIConstants.BUTTON_EXPORT_JSON)
 				}
 
-				StatsSection(locations = locations.locations)
+				StatsSection(stats = stats)
 			}
 		}
 	}

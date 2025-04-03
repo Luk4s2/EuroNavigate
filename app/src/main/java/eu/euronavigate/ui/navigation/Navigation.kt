@@ -5,15 +5,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import eu.euronavigate.ui.screens.mapScreen.MapScreen
 import eu.euronavigate.ui.screens.settingsScreen.SettingsScreen
-import eu.euronavigate.viewmodel.MapViewModel
+import eu.euronavigate.viewmodel.map.MapViewModel
+import eu.euronavigate.viewmodel.settings.SettingsViewModel
 
 @Composable
-fun Navigation(navController: NavHostController, viewModel: MapViewModel) {
+fun Navigation(navController: NavHostController) {
+	val mapViewModel = hiltViewModel<MapViewModel>()
+	val settingsViewModel = hiltViewModel<SettingsViewModel>()
+
 	Scaffold { paddingValues ->
 		NavHost(
 			navController = navController,
@@ -24,14 +29,16 @@ fun Navigation(navController: NavHostController, viewModel: MapViewModel) {
 		) {
 			composable("map") {
 				MapScreen(
-					viewModel = viewModel,
-					onNavigateToSettings = {
-						navController.navigate("settings")
-					}
+					viewModel = mapViewModel,
+					onNavigateToSettings = { navController.navigate("settings") }
 				)
 			}
 			composable("settings") {
-				SettingsScreen(viewModel = viewModel, navController = navController)
+				SettingsScreen(
+					viewModel = settingsViewModel,
+					mapViewModel = mapViewModel,
+					navController = navController
+				)
 			}
 		}
 	}

@@ -1,11 +1,11 @@
 package eu.euronavigate.data.repository
 
-import android.content.Context
-import eu.euronavigate.data.model.LocationData
+import eu.euronavigate.data.model.LocationDataModel
 import kotlinx.coroutines.flow.Flow
 
 interface ILocationRepository {
-	val locationUpdates: Flow<LocationData>
-	fun startLocationUpdates(context: Context, interval: Long)
+	val locationUpdates: Flow<LocationDataModel>
+	fun startLocationUpdates(interval: Long)
+	suspend fun startTrackingWithSavedInterval()
 	fun stopLocationUpdates()
 }

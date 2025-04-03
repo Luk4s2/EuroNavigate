@@ -4,21 +4,30 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.euronavigate.ui.utils.UIConstants
 import kotlinx.coroutines.flow.first
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object SettingsDataStore {
-	private const val INTERVAL_KEY = "tracking_interval"
-	private val Context.dataStore by preferencesDataStore("settings")
+private val Context.dataStore by preferencesDataStore("settings")
 
-	suspend fun saveInterval(context: Context, interval: Long) {
+@Singleton
+class SettingsDataStore @Inject constructor(
+	@ApplicationContext private val context: Context
+) {
+	companion object {
+		private val INTERVAL_KEY = longPreferencesKey("tracking_interval")
+	}
+
+	suspend fun saveInterval(interval: Long) {
 		context.dataStore.edit { prefs ->
-			prefs[longPreferencesKey(INTERVAL_KEY)] = interval
+			prefs[INTERVAL_KEY] = interval
 		}
 	}
 
-	suspend fun getInterval(context: Context): Long {
+	suspend fun getInterval(): Long {
 		val prefs = context.dataStore.data.first()
-		return prefs[longPreferencesKey(INTERVAL_KEY)] ?: UIConstants.FALLBACK_INTERVAL
+		return prefs[INTERVAL_KEY] ?: UIConstants.FALLBACK_INTERVAL
 	}
 }

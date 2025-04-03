@@ -7,7 +7,6 @@ object UIConstants {
 	const val CAMERA_PADDING = 100
 
 	// Padding & spacing
-	val PADDING_SMALL = 8.dp
 	val PADDING = 16.dp
 	val SPACER_MINI = 4.dp
 	val SPACER_SMALL = 8.dp

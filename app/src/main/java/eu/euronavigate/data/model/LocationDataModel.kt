@@ -3,7 +3,7 @@ package eu.euronavigate.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class LocationData(
+data class LocationDataModel(
 	val latitude: Double,
 	val longitude: Double,
 	val timestamp: Long,

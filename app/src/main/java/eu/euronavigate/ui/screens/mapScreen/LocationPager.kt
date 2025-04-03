@@ -18,14 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import eu.euronavigate.data.model.LocationData
+import eu.euronavigate.data.model.LocationDataModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun LocationPager(
-	locations: List<LocationData>,
-	selectedLocation: LocationData?,
-	onLocationSelected: (LocationData) -> Unit
+	locations: List<LocationDataModel>,
+	selectedLocation: LocationDataModel?,
+	onLocationSelected: (LocationDataModel) -> Unit
 ) {
 	val listState = rememberLazyListState()
 	val coroutineScope = rememberCoroutineScope()

@@ -1,6 +1,6 @@
 package eu.euronavigate.ui.utils
 
-object StatStrings {
+object LocalizedStrings {
 	const val LABEL_TITLE = "Location Details"
 	const val LABEL_TOTAL_DISTANCE = "Total Distance"
 	const val LABEL_AVG_SPEED = "Average Speed"

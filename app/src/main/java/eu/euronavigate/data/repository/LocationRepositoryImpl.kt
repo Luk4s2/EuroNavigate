@@ -8,27 +8,35 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import eu.euronavigate.data.model.LocationData
+import dagger.hilt.android.qualifiers.ApplicationContext
+import eu.euronavigate.data.local.SettingsDataStore
+import eu.euronavigate.data.model.LocationDataModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class LocationRepositoryImpl : ILocationRepository {
+@Singleton
+class LocationRepositoryImpl @Inject constructor(
+	@ApplicationContext private val context: Context,
+	private val settingsDataStore: SettingsDataStore
+) : ILocationRepository {
 
 	private var fusedLocationClient: FusedLocationProviderClient? = null
-	private var locationCallback: LocationCallback? = null
+	private lateinit var locationCallback: LocationCallback
 
-	private val _locationFlow = MutableSharedFlow<LocationData>(replay = 1)
-	override val locationUpdates: Flow<LocationData> = _locationFlow
+	private val _locationChannel = Channel<LocationDataModel>(Channel.BUFFERED)
+	override val locationUpdates: Flow<LocationDataModel> = _locationChannel.receiveAsFlow()
 
 	@SuppressLint("MissingPermission")
-	override fun startLocationUpdates(context: Context, interval: Long) {
+	override fun startLocationUpdates(interval: Long) {
 		fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
 		locationCallback = object : LocationCallback() {
 			override fun onLocationResult(result: LocationResult) {
 				for (location in result.locations) {
-					println("📡 New location: ${location.latitude}, ${location.longitude}")
-					val data = LocationData(
+					val data = LocationDataModel(
 						latitude = location.latitude,
 						longitude = location.longitude,
 						timestamp = location.time,
@@ -37,7 +45,7 @@ class LocationRepositoryImpl : ILocationRepository {
 						speed = location.speed,
 						altitude = if (location.hasAltitude()) location.altitude else null
 					)
-					_locationFlow.tryEmit(data)
+					_locationChannel.trySend(data)
 				}
 			}
 		}
@@ -47,12 +55,21 @@ class LocationRepositoryImpl : ILocationRepository {
 			interval * 60 * 1000
 		).build()
 
-		fusedLocationClient?.requestLocationUpdates(request, locationCallback!!, null)
+		fusedLocationClient?.requestLocationUpdates(request, locationCallback, null)
 	}
 
 	override fun stopLocationUpdates() {
-		locationCallback?.let {
+		locationCallback.let {
 			fusedLocationClient?.removeLocationUpdates(it)
 		}
+	}
+
+	@SuppressLint("MissingPermission")
+	override suspend fun startTrackingWithSavedInterval() {
+		val client = LocationServices.getFusedLocationProviderClient(context)
+		fusedLocationClient = client
+
+		val savedInterval = settingsDataStore.getInterval()
+		startLocationUpdates(savedInterval)
 	}
 }
